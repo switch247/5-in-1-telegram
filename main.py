@@ -1,7 +1,7 @@
 import csv, logging, requests,json,time
 from aiogram import Bot, Dispatcher, types,executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton,InlineKeyboardButton
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher import FSMContext
 
@@ -106,11 +106,41 @@ async def process_translation(message: types.Message , state: FSMContext):
     else:
         res = await translate(message.text)
         new ="Welcome! Please select an option:"
-        await message.answer(res, reply_markup=None)
+        await message.reply(res, reply_markup=None)
         await message.answer(new, reply_markup=keyboard)
 
 
 
+@dp.message_handler(lambda message: message.text == "News")
+async def ask_news(message: types.Message):
+    news = await get_news()
+    # print(news)
+    for index,item in enumerate( news ):
+        #    print(item)
+           news_text = f"---{item['articlesName']}---\n{item['articlesShortDescription']}"
+
+           keyboard = types.InlineKeyboardMarkup()
+           buttonm = types.InlineKeyboardButton(text="More", callback_data=f"display_c:{index}")
+           keyboard.add(buttonm)
+           await message.reply(news_text, reply_markup=keyboard)
+    
+@dp.callback_query_handler(lambda c: c.data.startswith('display_c:'))
+async def display_c_callback(callback_query: types.CallbackQuery):
+    target =  callback_query.data.split(':')[1] 
+    # print(target)
+    await callback_query.answer()
+    # await callback_query.message.reply(f": {item['content']}")
+    news =  await get_news()
+    # print(news)
+    
+    for index,items in enumerate( news):
+        if target == str(index):
+            json_obj = json.loads(items["articlesDescription"])
+            # print(json_obj)
+            for item in json_obj:
+                print(item)
+                await callback_query.answer()
+                await callback_query.message.reply(f"{item['content']}")
 
 
 
@@ -175,9 +205,22 @@ async def translate(query):
     return(response.json())['data']["translations"][0]['translatedText']
 
 
+async def get_news():
+    url = "https://reuters-business-and-financial-news.p.rapidapi.com/category-id/8/article-date/11-04-2021"
+    querystring = {"category-id":"8","ArticleDate":"11-04-2021"}
+    headers = {
+        "X-RapidAPI-Key": "5e5534d99cmshc500a57813ea737p1df09ejsndeaaeb550d43",
+        "X-RapidAPI-Host": "reuters-business-and-financial-news.p.rapidapi.com"
+    }
+    response = requests.get(url, headers=headers, params=querystring)
+    return(response.json())
+
+
+
 if __name__ == '__main__':
     # Start the bot
     try:
+        
         executor.start_polling(dp)
     except Exception as e:
         logging.exception(e)
