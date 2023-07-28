@@ -138,7 +138,7 @@ async def display_c_callback(callback_query: types.CallbackQuery):
             json_obj = json.loads(items["articlesDescription"])
             # print(json_obj)
             for item in json_obj:
-                print(item)
+                # print(item)
                 await callback_query.answer()
                 await callback_query.message.reply(f"{item['content']}")
 
