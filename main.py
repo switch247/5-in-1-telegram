@@ -220,7 +220,6 @@ async def get_news():
 if __name__ == '__main__':
     # Start the bot
     try:
-        
         executor.start_polling(dp)
     except Exception as e:
         logging.exception(e)
